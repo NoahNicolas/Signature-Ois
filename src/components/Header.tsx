@@ -12,7 +12,7 @@ const Header: React.FC = () => {
             className="h-16 w-16 mr-4"
           />
           <h1 className="text-3xl font-bold text-gray-800">
-            Fiches de Présence Numérique
+            Signature Ois
           </h1>
         </div>
         <p className="text-gray-600">
