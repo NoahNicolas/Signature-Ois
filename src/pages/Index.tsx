@@ -41,6 +41,16 @@ const Index: React.FC = () => {
     })));
   };
 
+  const handleImportProfessionals = (importedProfessionals: { firstName: string; lastName: string }[]) => {
+    const newProfessionals: Professional[] = importedProfessionals.map(prof => ({
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      firstName: prof.firstName,
+      lastName: prof.lastName,
+      createdAt: new Date(),
+    }));
+    setProfessionals([...professionals, ...newProfessionals]);
+  };
+
   // Gestion des réunions
   const handleAddMeeting = (title: string, date: Date) => {
     const newMeeting: Meeting = {
@@ -105,6 +115,7 @@ const Index: React.FC = () => {
               onAddProfessional={handleAddProfessional}
               onEditProfessional={handleEditProfessional}
               onDeleteProfessional={handleDeleteProfessional}
+              onImportProfessionals={handleImportProfessionals}
             />
           ) : (
             <MeetingsList

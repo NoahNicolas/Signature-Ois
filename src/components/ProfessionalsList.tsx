@@ -7,6 +7,7 @@ interface ProfessionalsListProps {
   onAddProfessional: (firstName: string, lastName: string) => void;
   onEditProfessional: (id: string, firstName: string, lastName: string) => void;
   onDeleteProfessional: (id: string) => void;
+  onImportProfessionals: (professionals: { firstName: string; lastName: string }[]) => void;
 }
 
 const ProfessionalsList: React.FC<ProfessionalsListProps> = ({
@@ -14,12 +15,14 @@ const ProfessionalsList: React.FC<ProfessionalsListProps> = ({
   onAddProfessional,
   onEditProfessional,
   onDeleteProfessional,
+  onImportProfessionals,
 }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,16 +53,62 @@ const ProfessionalsList: React.FC<ProfessionalsListProps> = ({
     setOpenMenuId(null);
   };
 
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      const importedProfessionals: { firstName: string; lastName: string }[] = [];
+      
+      lines.forEach((line, index) => {
+        // Ignorer la première ligne si elle contient des en-têtes
+        if (index === 0 && (line.toLowerCase().includes('prénom') || line.toLowerCase().includes('nom'))) {
+          return;
+        }
+        
+        const [firstName, lastName] = line.split(',').map(item => item.trim().replace(/"/g, ''));
+        if (firstName && lastName) {
+          importedProfessionals.push({ firstName, lastName });
+        }
+      });
+
+      if (importedProfessionals.length > 0) {
+        onImportProfessionals(importedProfessionals);
+        setShowImportModal(false);
+        // Reset file input
+        if (event.target) {
+          event.target.value = '';
+        }
+      } else {
+        alert('Aucun professionnel valide trouvé dans le fichier. Vérifiez le format : Prénom,Nom');
+      }
+    };
+    
+    reader.readAsText(file);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-gray-800">Professionnels</h2>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm"
-        >
-          + Ajouter un professionnel
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm"
+          >
+            📤 Importer CSV
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm"
+          >
+            + Ajouter un professionnel
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -167,6 +216,46 @@ const ProfessionalsList: React.FC<ProfessionalsListProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">
+              Importer des professionnels (CSV)
+            </h3>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-3">
+                Format attendu : une ligne par professionnel avec Prénom,Nom
+              </p>
+              <p className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                Exemple :<br/>
+                Jean,Dupont<br/>
+                Marie,Martin<br/>
+                Pierre,Bernard
+              </p>
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Sélectionner le fichier CSV
+              </label>
+              <input
+                type="file"
+                accept=".csv,.txt"
+                onChange={handleFileImport}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+              >
+                Annuler
+              </button>
+            </div>
           </div>
         </div>
       )}
